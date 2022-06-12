@@ -120,7 +120,7 @@
           height={elem.height}
         />
       {:else if elem.type === 'ellipse'}
-        <Ellipse cx={elem.cx} cy={elem.cy} rx={elem.rx} ry={elem.ry} />
+        <Ellipse cx={elem.cx + viewPortX} cy={elem.cy + viewPortY} rx={elem.rx} ry={elem.ry} />
       {/if}
     {/each}
   </svg>

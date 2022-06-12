@@ -42,8 +42,8 @@
         origY: y,
         x,
         y,
-        width: 10,
-        height: 10,
+        width: 1,
+        height: 1,
       } as CanvasRectangle
       components.push(rect)
 
@@ -63,13 +63,33 @@
 
       components = components
     } else if (drawing === Drawing.Ellipse) {
-      components.push({
+      const ellipse = {
         type: CanvasElementType.Ellipse,
+        origX: x,
+        origY: y,
         cx: x,
         cy: y,
-        rx: 0,
-        ry: 0,
-      })
+        rx: 1,
+        ry: 1,
+      } as CanvasEllipse
+      components.push(ellipse)
+      components = components
+
+      movingFn = (point: Point) => {
+        const { x, y } = point
+        const width = x - ellipse.origX
+        const height = y - ellipse.origY
+
+        console.log(x, y, ellipse.origX, ellipse.origY)
+
+        ellipse.cx = ellipse.origX + width / 2
+        ellipse.cy = ellipse.origY + height / 2
+
+        ellipse.rx = Math.abs(width) / 2
+        ellipse.ry = Math.abs(height) / 2
+
+        components = components
+      }
     }
   }
 
