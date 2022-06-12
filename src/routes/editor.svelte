@@ -17,7 +17,7 @@
     y: number
   }
 
-  let drawing: Drawing | null = Drawing.Rectangle
+  let drawing: Drawing | null = null
   let movingFn: ((point: Point) => void) | null = null
 
   const onDraw = (ev: CustomEvent) => {
@@ -33,32 +33,35 @@
   }
 
   const onStartMove = (ev: CustomEvent) => {
-    const { x, y } = ev.detail
-    console.log('start move', x, y, drawing)
+    let { x, y } = ev.detail
+
     if (drawing === Drawing.Rectangle) {
       const rect = {
         type: CanvasElementType.Rectangle,
+        origX: x,
+        origY: y,
         x,
         y,
         width: 10,
         height: 10,
       } as CanvasRectangle
       components.push(rect)
-      components = components
+
       movingFn = (point: Point) => {
-        const width = point.x - rect.x
-        const height = point.y - rect.y
+        const { x, y } = point
+        const width = x - rect.origX
+        const height = y - rect.origY
 
-        const x = width > 0 ? rect.x : point.x
-        const y = height > 0 ? rect.y : point.y
+        rect.x = width > 0 ? rect.origX : x
+        rect.y = height > 0 ? rect.origY : y
 
-        rect.x = x
-        rect.y = y
         rect.width = Math.abs(width)
         rect.height = Math.abs(height)
 
         components = components
       }
+
+      components = components
     } else if (drawing === Drawing.Ellipse) {
       components.push({
         type: CanvasElementType.Ellipse,
@@ -77,7 +80,6 @@
   }
 
   const onEndMove = (ev: CustomEvent) => {
-    console.log('end move', ev.detail as Point)
     drawing = null
     toolbar && toolbar.removeSelection()
     movingFn = null

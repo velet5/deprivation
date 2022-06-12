@@ -5,6 +5,8 @@ export enum CanvasElementType {
 
 export class CanvasRectangle {
   type: 'rectangle' = 'rectangle'
+  origX = 0
+  origY = 0
   x = 0
   y = 0
   width = 10
