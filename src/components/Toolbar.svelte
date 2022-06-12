@@ -7,6 +7,7 @@
   enum ItemType {
     rectangle,
     ellipse,
+    move,
   }
 
   let selected: ItemType | null = null
@@ -19,6 +20,10 @@
         break
       case ItemType.ellipse:
         emit('draw', 'ellipse')
+        break
+
+      case ItemType.move:
+        emit('action', 'move')
         break
     }
   }
@@ -37,4 +42,9 @@
   icon={'⭕️'}
   selected={selected === ItemType.ellipse}
   on:click={() => onSelect(ItemType.ellipse)}
+/>
+<ToolbarItem
+  icon="👆"
+  selected={selected === ItemType.move}
+  on:click={() => onSelect(ItemType.move)}
 />

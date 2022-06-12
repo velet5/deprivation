@@ -12,13 +12,25 @@
     Ellipse = 'ellipse',
   }
 
+  enum ActionType {
+    Move = 'move',
+  }
+
   type Point = {
     x: number
     y: number
   }
 
+  type Moving = {
+    origin: Point
+    current: Point
+  }
+
   let drawing: Drawing | null = null
+  let action: ActionType | null = null
+  let moving: Moving | null = null
   let movingFn: ((point: Point) => void) | null = null
+  let finishMovingFn: (() => void) | null = null
 
   const onDraw = (ev: CustomEvent) => {
     const type = ev.detail as CanvasElementType
@@ -32,19 +44,21 @@
     }
   }
 
+  const onAction = (ev: CustomEvent) => {
+    const type = ev.detail as ActionType
+    switch (type) {
+      case ActionType.Move:
+        action = ActionType.Move
+        break
+    }
+  }
+
   const onStartMove = (ev: CustomEvent) => {
     let { x, y } = ev.detail
 
     if (drawing === Drawing.Rectangle) {
-      const rect = {
-        type: CanvasElementType.Rectangle,
-        origX: x,
-        origY: y,
-        x,
-        y,
-        width: 1,
-        height: 1,
-      } as CanvasRectangle
+      const rect = new CanvasRectangle({ x, y, width: 1, height: 1 })
+
       components.push(rect)
 
       movingFn = (point: Point) => {
@@ -60,18 +74,18 @@
 
         components = components
       }
+      finishMovingFn = () => {
+        rect.reposition()
+      }
 
       components = components
     } else if (drawing === Drawing.Ellipse) {
-      const ellipse = {
-        type: CanvasElementType.Ellipse,
-        origX: x,
-        origY: y,
-        cx: x,
-        cy: y,
-        rx: 1,
-        ry: 1,
-      } as CanvasEllipse
+      const ellipse = new CanvasEllipse({
+        x,
+        y,
+        width: 1,
+        height: 1,
+      })
       components.push(ellipse)
       components = components
 
@@ -90,6 +104,21 @@
 
         components = components
       }
+      finishMovingFn = () => {
+        ellipse.reposition()
+      }
+    } else if (action === ActionType.Move) {
+      const c = components.find((c) => c.contains(x, y))
+      if (c == null) {
+        return
+      }
+      movingFn = (point: Point) => {
+        c.translate(point.x - x, point.y - y)
+        components = components
+      }
+      finishMovingFn = () => {
+        c.reposition()
+      }
     }
   }
 
@@ -100,9 +129,16 @@
   }
 
   const onEndMove = (ev: CustomEvent) => {
-    drawing = null
-    toolbar && toolbar.removeSelection()
+    if (finishMovingFn != null) {
+      finishMovingFn()
+    }
+    if (drawing != null) {
+      toolbar && toolbar.removeSelection()
+      drawing = null
+    } else if (action == ActionType.Move) {
+    }
     movingFn = null
+    finishMovingFn = null
   }
 
   let components: (CanvasRectangle | CanvasEllipse)[] = []
@@ -110,7 +146,9 @@
   let toolbar: { removeSelection(): void } | null = null
 </script>
 
-<section class="toolbar"><Toolbar on:draw={onDraw} bind:this={toolbar} /></section>
+<section class="toolbar">
+  <Toolbar on:draw={onDraw} on:action={onAction} bind:this={toolbar} />
+</section>
 <section class="canvas">
   <Canvas {components} on:startMove={onStartMove} on:move={onMove} on:endMove={onEndMove} />
 </section>
