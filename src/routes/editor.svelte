@@ -30,7 +30,7 @@
   let selected: (CanvasRectangle | CanvasEllipse) | null = null
 
   let drawing: Drawing | null = null
-  let action: ActionType | null = null
+  let action: ActionType = ActionType.Move
   let moving: Moving | null = null
   let movingFn: ((point: Point) => void) | null = null
   let finishMovingFn: (() => void) | null = null
