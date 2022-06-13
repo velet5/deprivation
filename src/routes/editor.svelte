@@ -6,6 +6,7 @@
   } from '../model/components/CanvasElement'
   import Canvas from '../components/Canvas.svelte'
   import Toolbar from '../components/Toolbar.svelte'
+  import ComponentOptions from '../components/ComponentOptions.svelte'
 
   enum Drawing {
     Rectangle = 'rectanlge',
@@ -25,6 +26,8 @@
     origin: Point
     current: Point
   }
+
+  let selected: (CanvasRectangle | CanvasEllipse) | null = null
 
   let drawing: Drawing | null = null
   let action: ActionType | null = null
@@ -94,8 +97,6 @@
         const width = x - ellipse.origX
         const height = y - ellipse.origY
 
-        console.log(x, y, ellipse.origX, ellipse.origY)
-
         ellipse.cx = ellipse.origX + width / 2
         ellipse.cy = ellipse.origY + height / 2
 
@@ -112,6 +113,8 @@
       if (c == null) {
         return
       }
+      console.log(selected)
+      selected = c
       movingFn = (point: Point) => {
         c.translate(point.x - x, point.y - y)
         components = components
@@ -152,6 +155,9 @@
 <section class="canvas">
   <Canvas {components} on:startMove={onStartMove} on:move={onMove} on:endMove={onEndMove} />
 </section>
+<section class="options">
+  <ComponentOptions element={selected} />
+</section>
 
 <style>
   :root {
@@ -173,5 +179,12 @@
     left: 0;
     width: 100%;
     height: 100%;
+  }
+
+  .options {
+    position: absolute;
+    z-index: var(--toolbarZindex);
+    right: 0;
+    top: 0;
   }
 </style>

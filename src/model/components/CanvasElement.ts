@@ -3,7 +3,13 @@ export enum CanvasElementType {
   Ellipse = 'ellipse',
 }
 
-export class CanvasRectangle {
+export interface CanvasElement {
+  type: 'rectangle' | 'ellipse'
+
+  hasFill(): boolean
+}
+
+export class CanvasRectangle implements CanvasElement {
   type: 'rectangle' = 'rectangle'
   origX: number
   origY: number
@@ -11,6 +17,7 @@ export class CanvasRectangle {
   y = 0
   width = 1
   height = 1
+  fill = '#888888'
 
   constructor(params: { x: number; y: number; width: number; height: number }) {
     this.origX = params.x
@@ -34,9 +41,13 @@ export class CanvasRectangle {
     this.origX = this.x
     this.origY = this.y
   }
+
+  hasFill(): boolean {
+    return true
+  }
 }
 
-export class CanvasEllipse {
+export class CanvasEllipse implements CanvasElement {
   type: 'ellipse' = 'ellipse'
   origX: number
   origY: number
@@ -44,6 +55,7 @@ export class CanvasEllipse {
   cy: number
   rx: number
   ry: number
+  fill = '#888888'
 
   constructor(params: { x: number; y: number; width: number; height: number }) {
     this.origX = params.x
@@ -68,5 +80,9 @@ export class CanvasEllipse {
   reposition() {
     this.origX = this.cx
     this.origY = this.cy
+  }
+
+  hasFill(): boolean {
+    return true
   }
 }

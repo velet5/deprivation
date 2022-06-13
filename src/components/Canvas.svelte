@@ -118,9 +118,16 @@
           y={elem.y + viewPortY}
           width={elem.width}
           height={elem.height}
+          fill={elem.fill}
         />
       {:else if elem.type === 'ellipse'}
-        <Ellipse cx={elem.cx + viewPortX} cy={elem.cy + viewPortY} rx={elem.rx} ry={elem.ry} />
+        <Ellipse
+          cx={elem.cx + viewPortX}
+          cy={elem.cy + viewPortY}
+          rx={elem.rx}
+          ry={elem.ry}
+          fill={elem.fill}
+        />
       {/if}
     {/each}
   </svg>
