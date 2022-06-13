@@ -156,7 +156,7 @@
   <Canvas {components} on:startMove={onStartMove} on:move={onMove} on:endMove={onEndMove} />
 </section>
 <section class="options">
-  <ComponentOptions element={selected} />
+  <ComponentOptions element={selected} on:fill={() => (components = components)} />
 </section>
 
 <style>
