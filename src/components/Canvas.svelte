@@ -1,9 +1,14 @@
 <script lang="ts">
-  import type { CanvasEllipse, CanvasRectangle } from '../model/components/CanvasElement'
+  import { createEventDispatcher, onMount } from 'svelte'
+  import { ActionType, Drawing, type Moving, type Point } from '../model/actions/actions'
+  import {
+    BoundingRect as Rect,
+    CanvasEllipse,
+    CanvasRectangle,
+  } from '../model/components/CanvasElement'
   import Ellipse from './canvas/Ellipse.svelte'
   import Rectangle from './canvas/Rectangle.svelte'
-  import { createEventDispatcher } from 'svelte'
-  import { onMount } from 'svelte'
+  import BoundingRect from './canvas/BoundingRect.svelte'
 
   const emit = createEventDispatcher()
 
@@ -11,6 +16,8 @@
   export let width = 1000
   export let height = 1000
   export let zoom = 1
+  export let drawing: Drawing | null
+  export let action: ActionType
 
   let isPressed = false
   let viewPortX = 0
@@ -34,13 +41,12 @@
 
   const onMouseDown = (ev: MouseEvent) => {
     isPressed = true
-    emit('startMove', toPoint(ev))
+    const { x, y } = toPoint(ev)
+    onStartMove(x, y)
   }
 
   const onMouseMove = (ev: MouseEvent) => {
-    if (isPressed) {
-      emit('move', toPoint(ev))
-    }
+    onMove(toPoint(ev))
   }
 
   const onMouseUp = (ev: MouseEvent) => {
@@ -48,38 +54,26 @@
       return
     }
     isPressed = false
-    emit('endMove', toPoint(ev))
+    onEndMove(toPoint(ev))
   }
+
+  let bounds: Rect | null = null
 
   let svg: SVGSVGElement
   let viewport: SVGRectElement
+  let selected: (CanvasRectangle | CanvasEllipse) | null = null
 
   $: svg && svg.style.setProperty('--zoom', `${zoom}`)
-
-  const moveComponent = (component: CanvasRectangle | CanvasEllipse, x: number, y: number) => {
-    console.log('move', component, x, y)
-    if (Number.isFinite(x) && Number.isFinite(y)) {
-      switch (component.type) {
-        case 'rectangle':
-          break
-      }
-    }
-  }
+  $: selected && (bounds = selected!.boundingRect())
 
   const resize = () => {
     const w = window.innerWidth
     const h = window.innerHeight
 
-    const prevX = viewPortX
-    const prevY = viewPortY
     viewPortX = (w - width * zoom) / 2
     viewPortY = (h - height * zoom) / 2
 
-    components.forEach((c) => moveComponent(c, viewPortX, viewPortY))
-    components = components
-
     if (svg) {
-      console.log('set')
       svg.setAttribute('width', `${w}px`)
       svg.setAttribute('height', `${h}px`)
     }
@@ -89,6 +83,100 @@
     resize()
     window.addEventListener('resize', resize)
   })
+
+  let movingFn: ((point: Point) => void) | null = null
+  let finishMovingFn: (() => void) | null = null
+
+  const onStartMove = (x: number, y: number) => {
+    console.log('onStartMove', x, y, action, drawing)
+
+    if (drawing === Drawing.Rectangle) {
+      const rect = new CanvasRectangle({ x, y, width: 1, height: 1 })
+
+      components.push(rect)
+
+      movingFn = (point: Point) => {
+        const { x, y } = point
+        const width = x - rect.origX
+        const height = y - rect.origY
+
+        rect.x = width > 0 ? rect.origX : x
+        rect.y = height > 0 ? rect.origY : y
+
+        rect.width = Math.abs(width)
+        rect.height = Math.abs(height)
+
+        components = components
+      }
+      finishMovingFn = () => {
+        rect.reposition()
+      }
+
+      components = components
+    } else if (drawing === Drawing.Ellipse) {
+      const ellipse = new CanvasEllipse({
+        x,
+        y,
+        width: 1,
+        height: 1,
+      })
+      components.push(ellipse)
+      components = components
+
+      movingFn = (point: Point) => {
+        const { x, y } = point
+        const width = x - ellipse.origX
+        const height = y - ellipse.origY
+
+        ellipse.cx = ellipse.origX + width / 2
+        ellipse.cy = ellipse.origY + height / 2
+
+        ellipse.rx = Math.abs(width) / 2
+        ellipse.ry = Math.abs(height) / 2
+
+        components = components
+      }
+      finishMovingFn = () => {
+        ellipse.reposition()
+      }
+    } else if (action === ActionType.Move) {
+      const c = components.find((c) => c.contains(x, y))
+      if (c == null) {
+        return
+      }
+      selected = c
+      emit('selection', c)
+      movingFn = (point: Point) => {
+        c.translate(point.x - x, point.y - y)
+        components = components
+      }
+      finishMovingFn = () => {
+        c.reposition()
+      }
+    }
+  }
+
+  const onMove = (point: Point) => {
+    if (movingFn != null) {
+      bounds = null
+      movingFn(point)
+    }
+  }
+
+  const onEndMove = (point: Point) => {
+    if (movingFn != null) {
+      movingFn(point)
+    }
+    if (finishMovingFn != null) {
+      finishMovingFn()
+    }
+    if (drawing != null) {
+      emit('drawingFinished')
+    } else if (action == ActionType.Move) {
+    }
+    movingFn = null
+    finishMovingFn = null
+  }
 </script>
 
 <div class="wrapper" on:resize={resize}>
@@ -130,6 +218,16 @@
         />
       {/if}
     {/each}
+    {#if bounds != null}
+      <BoundingRect
+        xShift={viewPortX}
+        yShift={viewPortY}
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+      />
+    {/if}
   </svg>
 </div>
 

@@ -7,6 +7,12 @@ export interface CanvasElement {
   type: 'rectangle' | 'ellipse'
 
   hasFill(): boolean
+
+  boundingRect(): BoundingRect
+}
+
+export class BoundingRect {
+  constructor(public x: number, public y: number, public width: number, public height: number) {}
 }
 
 export class CanvasRectangle implements CanvasElement {
@@ -18,6 +24,8 @@ export class CanvasRectangle implements CanvasElement {
   width = 1
   height = 1
   fill = '#888888'
+
+  private bounds: BoundingRect = new BoundingRect(0, 0, 1, 1)
 
   constructor(params: { x: number; y: number; width: number; height: number }) {
     this.origX = params.x
@@ -45,6 +53,14 @@ export class CanvasRectangle implements CanvasElement {
   hasFill(): boolean {
     return true
   }
+
+  boundingRect(): BoundingRect {
+    this.bounds.x = this.x
+    this.bounds.y = this.y
+    this.bounds.width = this.width
+    this.bounds.height = this.height
+    return this.bounds
+  }
 }
 
 export class CanvasEllipse implements CanvasElement {
@@ -56,6 +72,7 @@ export class CanvasEllipse implements CanvasElement {
   rx: number
   ry: number
   fill = '#888888'
+  private bounds: BoundingRect = new BoundingRect(0, 0, 1, 1)
 
   constructor(params: { x: number; y: number; width: number; height: number }) {
     this.origX = params.x
@@ -84,5 +101,13 @@ export class CanvasEllipse implements CanvasElement {
 
   hasFill(): boolean {
     return true
+  }
+
+  boundingRect(): BoundingRect {
+    this.bounds.x = this.cx - this.rx
+    this.bounds.y = this.cy - this.ry
+    this.bounds.width = this.rx * 2
+    this.bounds.height = this.ry * 2
+    return this.bounds
   }
 }
